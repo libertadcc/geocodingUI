@@ -3,10 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>ArcGIS Developer Guide: Forward geocoding</title>
-    <!-- ArcGIS Mapping APIs and Location Services Developer Guide
-      Learn more: https://developers.arcgis.com/documentation/mapping-apis-and-services/search/
-      -->
+    <title>Geocodificación</title>
     <style>
         html,
         body {
@@ -39,6 +36,10 @@
             column-gap: 10px;
         }
 
+        #btnConfirmInfo{
+            padding: 20px;
+        }
+
         #search {
             padding: 10px;
             width: 220px;
@@ -57,13 +58,8 @@
             "esri/views/MapView",
             "esri/Graphic",
             "esri/rest/locator",
-            "esri/symbols/WebStyleSymbol",
-
-            "esri/portal/Portal",
-            "esri/identity/OAuthInfo",
-            "esri/identity/IdentityManager"
-        ], (Map, MapView, Graphic, locator, WebStyleSymbol,
-            Portal, OAuthInfo, IdentityManager) => {
+            "esri/symbols/WebStyleSymbol"
+        ], (Map, MapView, Graphic, locator, WebStyleSymbol) => {
             const map = new Map({
                 basemap: "streets-navigation-vector"
             });
@@ -130,9 +126,9 @@
             }
 
             geocodingServiceUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
-
+            const list = document.getElementById('lista');
             function geocodeSuggestion(suggestionText) {
-                const list = document.getElementById('lista');
+                
                 list.innerHTML = '';
                 const params = {
                     text: suggestionText, // Suggestion text
@@ -185,6 +181,7 @@
 
             const serviceUrl = "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
             view.on("click", function (evt) {
+                list.innerHTML = '';
                 const params = {
                     location: evt.mapPoint
                 };
@@ -227,7 +224,9 @@
                         response.location.latitude.toFixed(5),
                     location: location
                 });
-            }
+            };
+
+            document.getElementById('btnConfirmInfo').addEventListener('click', () => alert('Envío de información'));
 
 
         });
@@ -260,12 +259,18 @@
                 <calcite-input-text read-only id="country"></calcite-input-text>
             </calcite-label>
         </div>
+        <calcite-button id="btnConfirmInfo">Confirmar dirección</calcite-button>
     </div>
 
     <div id="search">
         <calcite-input-text placeholder="Introduce una dirección" id="suggestions"></calcite-input-text>
         <calcite-list id="lista"></calcite-list>
+        <br>
+       
     </div>
+
+    
+
 </body>
 
 </html>
