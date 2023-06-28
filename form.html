@@ -1,0 +1,223 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>ArcGIS Developer Guide: Forward geocoding</title>
+    <!-- ArcGIS Mapping APIs and Location Services Developer Guide
+      Learn more: https://developers.arcgis.com/documentation/mapping-apis-and-services/search/
+      -->
+    <style>
+        html,
+        body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+
+        #wrapper {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #viewDiv {
+            height: 70%;
+            width: 100%;
+        }
+
+        #form {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 10px;
+        }
+
+        #search {
+            padding: 10px;
+            width: 220px;
+        }
+    </style>
+    <!-- Calcite -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/1.4.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.4.2/calcite.css" />
+    <!-- ArcGIS Maps SDK for JS -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.26"></script>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/rest/locator",
+            "esri/symbols/WebStyleSymbol",
+
+            "esri/portal/Portal",
+            "esri/identity/OAuthInfo",
+            "esri/identity/IdentityManager"
+        ], (Map, MapView, Graphic, locator, WebStyleSymbol, 
+            Portal, OAuthInfo, IdentityManager) => {
+            const map = new Map({
+                basemap: "streets-navigation-vector"
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [-1.129, 37.982],
+                zoom: 15
+            });
+            
+
+            function showSuggestion(text, magicKey) {
+                const option = document.createElement("option");
+                option.innerHTML = text;
+                option.value = magicKey;
+                select.appendChild(option);
+            };
+
+            function showSearchResult(results) {
+                console.log(results)
+                if (!results.length) {
+                    return;
+                }
+                const result = results[0];
+                view.graphics.removeAll();
+                const webStyleSymbol = new WebStyleSymbol({
+                    name: "esri-pin-1",
+                    styleName: "Esri2DPointSymbolsStyle"
+                });
+                const graphic = new Graphic({
+                    symbol: webStyleSymbol,
+                    geometry: result.location,
+                    attributes: result.attributes,
+                    popupTemplate: {
+                        title: "{PlaceName}",
+                        content:
+                            "{LongLabel}" +
+                            "<br><br>" +
+                            result.location.longitude.toFixed(5) +
+                            "," +
+                            result.location.latitude.toFixed(5),
+                    },
+                });
+                view.graphics.add(graphic);
+                view.popup.open({
+                    features: [graphic],
+                    location: result.location,
+                });
+                view.goTo({
+                    target: result.location,
+                    zoom: 13,
+                });
+            }
+
+            const inputUser = document.getElementById('suggestions');
+            inputUser.addEventListener('keyup', suggestPlace);
+
+            function suggestPlace(evt) {
+                if (inputUser.value.length >= 4) {
+                    geocodeSuggestion(inputUser.value)
+                }
+            }
+
+            geocodingServiceUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+            function geocodeSuggestion(suggestionText) {
+                const list = document.getElementById('lista');
+                list.innerHTML = '';
+                const params = {
+                    text: suggestionText, // Suggestion text
+                };
+                locator.suggestLocations(geocodingServiceUrl, params).then((response) => {
+                    console.log(response);
+                    response.forEach((suggestion) => {
+                        const option = document.createElement('calcite-list-item')
+                        option.setAttribute('label', suggestion.text);
+                        const magicId = suggestion.magicKey;
+                        option.setAttribute('value', magicId);
+
+                        option.addEventListener('click', selectedItem);
+                        list.appendChild(option);
+                    });
+                });
+            }
+
+            function selectedItem(evt) {
+                const magicKey = evt.target.value;
+                const text = evt.target.label;
+                inputUser.value = text;
+                const params = {
+                    SingeLine: text, // suggestion text
+                    address: {
+                        magicKey: magicKey, // suggestion magic key
+                    },
+                    outFields: ["*"],
+                    countryCode: "ES",
+                    forStorage: true
+                };
+                // Geocode suggestion and show location
+                locator.addressToLocations(geocodingServiceUrl, params).then((results) => {
+                    showSearchResult(results);
+                    fillInForm(results[0])
+                }).catch(function(error) {
+                    alert('Este usuario no puede acceder al servicio de geocodificación')
+                });
+            }
+
+            function fillInForm(data) {
+                const attributes = data.attributes;
+                console.log('attributes', attributes);
+                document.getElementById('address').value = attributes.ShortLabel;
+                document.getElementById('city').value = attributes.City;
+                document.getElementById('zipCode').value = attributes.Postal;
+                document.getElementById('country').value = attributes.CntryName;
+            }
+
+
+        });
+
+    </script>
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="viewDiv"></div>
+        <div id="form">
+            <calcite-label>
+                Dirección
+                <calcite-input-text read-only id="address"></calcite-input-text>
+            </calcite-label>
+            <calcite-label>
+                Piso
+                <calcite-input-text id="floor"></calcite-input-text>
+            </calcite-label>
+            <calcite-label>
+                Ciudad
+                <calcite-input-text read-only id="city"></calcite-input-text>
+            </calcite-label>
+            <calcite-label>
+                Código postal
+                <calcite-input-text read-only id="zipCode"></calcite-input-text>
+            </calcite-label>
+            <calcite-label>
+                País
+                <calcite-input-text read-only id="country"></calcite-input-text>
+            </calcite-label>
+        </div>
+    </div>
+
+    <div id="search">
+        <calcite-input-text placeholder="Introduce una dirección" id="suggestions"></calcite-input-text>
+        <calcite-list id="lista"></calcite-list>
+    </div>
+</body>
+
+</html>

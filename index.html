@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>ArcGIS Maps SDK for JavaScript Tutorials: Reverse geocode</title>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #viewDiv {
+        height: 70%;
+        width: 100%;
+      }
+      #form {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 10px;
+      }
+    </style>
+    <!-- Calcite -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/1.4.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.4.2/calcite.css" />
+    <!-- ArcGIS Maps SDK for JS -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.27/"></script>
+    <script>
+
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+
+        "esri/rest/locator"
+
+      ], function (Map, MapView, locator) {
+
+
+        const map = new Map({
+          basemap: "streets-navigation-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-1.129, 37.982],
+          zoom: 15
+        });
+
+        const serviceUrl = "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+        view.on("click", function (evt) {
+          const params = {
+            location: evt.mapPoint,
+            forStorage: true
+          };
+
+          locator.locationToAddress(serviceUrl, params).then(
+            function (response) {
+              // Show the address found
+              const address = response.address;
+              showAddress(address, evt.mapPoint);
+              fillInForm(response);
+            },
+            function (err) {
+              // Show no address found
+              showAddress("No address found.", evt.mapPoint);
+            }
+          );
+
+        });
+
+        function showAddress(address, pt) {
+
+          view.openPopup({
+            title: +Math.round(pt.longitude * 100000) / 100000 + ", " + Math.round(pt.latitude * 100000) / 100000,
+            content: address,
+            location: pt
+          });
+        }
+
+        function fillInForm(data) {
+            const attributes = data.attributes;
+            console.log('attributes', attributes);
+            document.getElementById('address').value = attributes.Address;
+            document.getElementById('city').value = attributes.City;
+            document.getElementById('zipCode').value = attributes.Postal;
+            document.getElementById('country').value = attributes.CntryName;
+        }
+
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="form">
+        <calcite-label>
+            Dirección
+            <calcite-input-text read-only id="address"></calcite-input-text>
+        </calcite-label>
+        <calcite-label>
+            Piso
+            <calcite-input-text id="floor"></calcite-input-text>
+        </calcite-label>
+        <calcite-label>
+            Ciudad
+            <calcite-input-text read-only id="city"></calcite-input-text>
+        </calcite-label>
+        <calcite-label>
+            Código postal
+            <calcite-input-text read-only id="zipCode"></calcite-input-text>
+        </calcite-label>
+        <calcite-label>
+            País
+            <calcite-input-text read-only id="country"></calcite-input-text>
+        </calcite-label>
+    </div>
+  </body>
+</html>
