@@ -48,8 +48,8 @@
     <script type="module" src="https://js.arcgis.com/calcite-components/1.4.2/calcite.esm.js"></script>
     <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.4.2/calcite.css" />
     <!-- ArcGIS Maps SDK for JS -->
-    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
-    <script src="https://js.arcgis.com/4.26"></script>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.27"></script>
 
     <script>
         require([
@@ -62,7 +62,7 @@
             "esri/portal/Portal",
             "esri/identity/OAuthInfo",
             "esri/identity/IdentityManager"
-        ], (Map, MapView, Graphic, locator, WebStyleSymbol, 
+        ], (Map, MapView, Graphic, locator, WebStyleSymbol,
             Portal, OAuthInfo, IdentityManager) => {
             const map = new Map({
                 basemap: "streets-navigation-vector"
@@ -74,7 +74,7 @@
                 center: [-1.129, 37.982],
                 zoom: 15
             });
-            
+
 
             function showSuggestion(text, magicKey) {
                 const option = document.createElement("option");
@@ -99,7 +99,7 @@
                     geometry: result.location,
                     attributes: result.attributes,
                     popupTemplate: {
-                        title: "{PlaceName}",
+                        title: "{ShortLabel}",
                         content:
                             "{LongLabel}" +
                             "<br><br>" +
@@ -107,6 +107,7 @@
                             "," +
                             result.location.latitude.toFixed(5),
                     },
+
                 });
                 view.graphics.add(graphic);
                 view.popup.open({
@@ -167,18 +168,65 @@
                 locator.addressToLocations(geocodingServiceUrl, params).then((results) => {
                     showSearchResult(results);
                     fillInForm(results[0])
-                }).catch(function(error) {
+                }).catch(function (error) {
                     alert('Este usuario no puede acceder al servicio de geocodificación')
                 });
             }
 
             function fillInForm(data) {
+                console.log('data', data)
                 const attributes = data.attributes;
                 console.log('attributes', attributes);
-                document.getElementById('address').value = attributes.ShortLabel;
+                document.getElementById('address').value = attributes.Address || attributes.ShortLabel;
                 document.getElementById('city').value = attributes.City;
                 document.getElementById('zipCode').value = attributes.Postal;
                 document.getElementById('country').value = attributes.CntryName;
+            };
+
+            const serviceUrl = "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+            view.on("click", function (evt) {
+                const params = {
+                    location: evt.mapPoint
+                };
+
+                locator.locationToAddress(serviceUrl, params).then(
+                    function (response) {
+                        console.log('response', response)
+                        // Show the address found
+                        // const address = response.attributes.Address;
+                        showAddress(response, evt.mapPoint);
+                        fillInForm(response);
+                    },
+                    function (err) {
+                        // Show no address found
+                        showAddress("No address found.", evt.mapPoint);
+                    }
+                );
+
+            });
+
+            function showAddress(response, location) {
+                console.log('response', response)
+                console.log('location', location);
+                view.graphics.removeAll();
+                const webStyleSymbol = new WebStyleSymbol({
+                    name: "esri-pin-1",
+                    styleName: "Esri2DPointSymbolsStyle"
+                });
+                const graphic = new Graphic({
+                    symbol: webStyleSymbol,
+                    geometry: location
+                });
+                view.graphics.add(graphic);
+
+                view.openPopup({
+                    title: response.attributes.Address,
+                    content: response.attributes.LongLabel
+                        + "<br><br>" +
+                        response.location.longitude.toFixed(5) + "," +
+                        response.location.latitude.toFixed(5),
+                    location: location
+                });
             }
 
 
