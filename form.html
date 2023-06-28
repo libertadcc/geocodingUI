@@ -182,6 +182,7 @@
             const serviceUrl = "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
             view.on("click", function (evt) {
                 list.innerHTML = '';
+                inputUser.value = ''
                 const params = {
                     location: evt.mapPoint
                 };
