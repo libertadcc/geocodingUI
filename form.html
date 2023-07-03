@@ -80,7 +80,6 @@
             };
 
             function showSearchResult(results) {
-                console.log(results)
                 if (!results.length) {
                     return;
                 }
@@ -132,9 +131,10 @@
                 list.innerHTML = '';
                 const params = {
                     text: suggestionText, // Suggestion text
+                    countryCode: "ES",
+                    location: [-1.130, 37.983]
                 };
                 locator.suggestLocations(geocodingServiceUrl, params).then((response) => {
-                    console.log(response);
                     response.forEach((suggestion) => {
                         const option = document.createElement('calcite-list-item')
                         option.setAttribute('label', suggestion.text);
@@ -152,12 +152,10 @@
                 const text = evt.target.label;
                 inputUser.value = text;
                 const params = {
-                    SingeLine: text, // suggestion text
                     address: {
                         magicKey: magicKey, // suggestion magic key
                     },
                     outFields: ["*"],
-                    countryCode: "ES",
                     forStorage: true
                 };
                 // Geocode suggestion and show location
@@ -170,9 +168,7 @@
             }
 
             function fillInForm(data) {
-                console.log('data', data)
                 const attributes = data.attributes;
-                console.log('attributes', attributes);
                 document.getElementById('address').value = attributes.Address || attributes.ShortLabel;
                 document.getElementById('city').value = attributes.City;
                 document.getElementById('zipCode').value = attributes.Postal;
@@ -189,7 +185,6 @@
 
                 locator.locationToAddress(serviceUrl, params).then(
                     function (response) {
-                        console.log('response', response)
                         // Show the address found
                         // const address = response.attributes.Address;
                         showAddress(response, evt.mapPoint);
@@ -204,8 +199,6 @@
             });
 
             function showAddress(response, location) {
-                console.log('response', response)
-                console.log('location', location);
                 view.graphics.removeAll();
                 const webStyleSymbol = new WebStyleSymbol({
                     name: "esri-pin-1",
