@@ -2,7 +2,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>ArcGIS Maps SDK for JavaScript Tutorials: Reverse geocode</title>
+    <title>ArcGIS Maps SDK for JavaScript: Geocode</title>
     <style>
       html,
       body {
@@ -46,7 +46,7 @@
         const view = new MapView({
           container: "viewDiv",
           map: map,
-          center: [-1.129, 37.982],
+          center: [-5.84, 43.36],
           zoom: 15
         });
 
@@ -54,8 +54,7 @@
 
         view.on("click", function (evt) {
           const params = {
-            location: evt.mapPoint,
-            forStorage: true
+            location: evt.mapPoint
           };
 
           locator.locationToAddress(serviceUrl, params).then(
@@ -74,7 +73,6 @@
         });
 
         function showAddress(address, pt) {
-
           view.openPopup({
             title: +Math.round(pt.longitude * 100000) / 100000 + ", " + Math.round(pt.latitude * 100000) / 100000,
             content: address,
